@@ -11,7 +11,7 @@ use {
     lazy_static::lazy_static,
     openssl_probe,
     serenity::{builder::CreateMessage, model::channel::Message, prelude::*},
-    std::{env, str::FromStr, thread},
+    std::{env, str::FromStr, thread, fs, io::prelude::*, io::BufReader},
     tokio,
 };
 
@@ -35,6 +35,17 @@ fn format_resp(m: CreateMessage, resp: &Response) -> CreateMessage {
             .fields(search.words.iter().map(|w| {
                 let mut word = w.word.clone();
                 let mut body = String::new();
+
+                // let data = fs::read_to_string("dict.txt").expect("Unable to read file");
+                let file = fs::File::open("dict.txt").expect("no such file");
+                let buf = BufReader::new(file);
+                let dict:Vec<String> = buf.lines()
+                    .map(|l| l.expect("Could not parse line"))
+                    .collect();
+                if !dict.contains(&word){
+                    fs::write("dict.txt", word.clone()).expect("Unable to write file");
+                    fs::write("dict.txt", "\n").expect("Unable to write file");
+                }
                 if let Lang::Other(ref lang) = w.lang {
                     word.push_str(" ");
                     word.push_str(lang);
